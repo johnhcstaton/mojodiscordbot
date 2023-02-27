@@ -69,6 +69,11 @@ def get_twins_pretty_string(gameId):
     prettystring = prettystring + "```" + statsapi.game_scoring_plays(gameId) + "```"
     return prettystring
 
+# TODO - Make nicer.  Right now it's just
+# Last Wild Game (2023-02-26T19:00:00Z)
+# Minnesota Wild (H): 3, Columbus Blue Jackets (A): 2
+# for example.  The MLB statsapi wrappers for linescore and game_scoring_plays makes a much nice
+# results string, and I'd like something like that for this.
 # Convenience function to get a nice string output of the results of the Wild game with json data
 def get_wild_pretty_string(data):
     home_team = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["teams"]["home"]["team"]["name"]
