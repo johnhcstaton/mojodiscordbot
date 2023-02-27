@@ -21,8 +21,8 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD = os.getenv('DISCORD_GUILD')
 GUILD_INT = os.getenv('DISCORD_GUILD_INT')
-MOJO_BASEBALL_CHANNEL_NUM = os.getenv('DISCORD_BASEBALL_CHANNEL')
-MOJO_ICE_CHANNEL_NUM = os.getenv('DISCORD_HOCKEY_CHANNEL')
+MOJO_BASEBALL_CHANNEL_NUM = int(os.getenv('DISCORD_BASEBALL_CHANNEL'))
+MOJO_ICE_CHANNEL_NUM = int(os.getenv('DISCORD_HOCKEY_CHANNEL'))
 YAHOO_LEAGUE_ID = os.getenv('YAHOO_LEAGUE_ID')
 MLB_URL = 'https://statsapi.mlb.com/api/v1/schedule/games/?sportId=1'
 TWINS_ID = 142
@@ -33,6 +33,7 @@ BACKGROUND_LOOP_TIME = 180.0
 query = YahooFantasySportsQuery(Path("./"), league_id=YAHOO_LEAGUE_ID)
 
 client = discord.Client(intents=discord.Intents.all())
+guild = discord.Object(id=GUILD_INT)
 tree = app_commands.CommandTree(client)
 
 start_up_datetime = datetime.now()
@@ -87,7 +88,7 @@ def get_wild_pretty_string(data):
 
 # Discord slash command to "Get the most recent Twins game results from Mojo"
 @tree.command(name = "twins", description = "Get the most recent Twins game results from Mojo", 
-              guild=discord.Object(id=GUILD_INT)) 
+              guild = guild) 
 async def twins_game(interaction):
     last_game = get_twins_last_game()
     if last_game == None:
@@ -98,7 +99,7 @@ async def twins_game(interaction):
   
 # Discord slash command to "Get the most recent Wild game results from Mojo"
 @tree.command(name = "wild", description = "Get the most recent Wild game results from Mojo", 
-              guild=discord.Object(id=GUILD_INT)) 
+              guild = guild) 
 async def wild_game(interaction):  
     response = requests.get(NHL_URL, params={"Content-Type": "application/json"})
     data = response.json()
@@ -106,7 +107,7 @@ async def wild_game(interaction):
 
 # Discord slash command to "Get the MIT league standings from Mojo"
 @tree.command(name = "league_standings", description = "Get the MIT league standings from Mojo", 
-              guild=discord.Object(id=GUILD_INT)) 
+              guild = guild) 
 async def league_standings(interaction):
     standings = query.get_league_standings()
     teams = standings.teams
@@ -120,7 +121,7 @@ async def league_standings(interaction):
      
 # Discord slash command to "See how long Mojo has been running"
 @tree.command(name = "uptime", description = "See how long Mojo has been running", 
-              guild=discord.Object(id=GUILD_INT)) 
+              guild = guild) 
 async def uptime(interaction):
     await interaction.response.send_message(datetime.now() - start_up_datetime)
 
@@ -140,7 +141,7 @@ async def on_ready():
     background_thread.start()
 
 # Discord Approved (tm) background thread to check for Twins/Wild game results
-@tasks.loop(seconds=BACKGROUND_LOOP_TIME)
+@tasks.loop(seconds = BACKGROUND_LOOP_TIME)
 async def background_thread():
     # twins score
     global mlb_last_game
