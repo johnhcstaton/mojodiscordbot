@@ -147,9 +147,15 @@ async def background_thread():
     global mlb_last_game
     last_twins_game = get_twins_last_game()
     if last_twins_game != None and mlb_last_game != last_twins_game:
-        mlb_last_game = last_twins_game
-        mojoBaseballChannel = client.get_channel(MOJO_BASEBALL_CHANNEL_NUM)
-        await mojoBaseballChannel.send(get_twins_pretty_string(last_twins_game))
+        # another check
+        linescore = statsapi.linescore(last_twins_game)
+        # have to check for Final because MLB updates last_game before the game
+        # even starts AND updates game_scoring_plays during the game, so *only*
+        # post the final score
+        if "Final" in linescore:
+            mlb_last_game = last_twins_game
+            mojoBaseballChannel = client.get_channel(MOJO_BASEBALL_CHANNEL_NUM)
+            await mojoBaseballChannel.send(get_twins_pretty_string(last_twins_game))
         
     # wild score
     global nhl_last_game
