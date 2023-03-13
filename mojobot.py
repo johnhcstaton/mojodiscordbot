@@ -66,8 +66,34 @@ nhl_last_game = get_wild_last_game()
 
 # Convenience function to get a nice string output of the results of the Twins game with gameId
 def get_twins_pretty_string(gameId):
-    prettystring = "```" + statsapi.linescore(gameId) + "```"
-    prettystring = prettystring + "```" + statsapi.game_scoring_plays(gameId) + "```"
+    boxscore_data = statsapi.boxscore_data(mlb_last_game, timecode=None)
+    away = boxscore_data["teamInfo"]["away"]["teamName"].replace(' ', '-').lower()
+    home = boxscore_data["teamInfo"]["home"]["teamName"].replace(' ', '-').lower()
+    
+    away_runs = boxscore_data["away"]["teamStats"]["batting"]["runs"]
+    home_runs = boxscore_data["home"]["teamStats"]["batting"]["runs"]
+    
+    result = ""
+    if (away == "twins" and away_runs > home_runs) or (home == "twins" and home_runs > away_runs) :
+        result = "Twins win!"
+        
+    # linescore
+    linescore = statsapi.linescore(gameId)
+    prettystring = "```" + linescore + "\n" + result + "```"
+    
+    # Trying it without showing the scoring plays, so as to take up less screenspace
+    # prettystring = prettystring + "```" + statsapi.game_scoring_plays(gameId) + "```"
+    
+    # link to the official mlb wrapup for the game
+    today = datetime.now()
+    year = today.year
+    month = '{:02d}'.format(today.month)
+    day = '{:02d}'.format(today.day)
+
+    wrap_url = "https://www.mlb.com/gameday/" + away + "-vs-" + home + "/" + str(year) + "/" + str(month) + "/" + str(day) + "/" + str(mlb_last_game) + "/final/wrap"
+
+    prettystring = prettystring + "MLB Wrap Up: " + wrap_url
+    
     return prettystring
 
 # TODO - Make nicer.  Right now it's just
@@ -77,13 +103,20 @@ def get_twins_pretty_string(gameId):
 # results string, and I'd like something like that for this.
 # Convenience function to get a nice string output of the results of the Wild game with json data
 def get_wild_pretty_string(data):
+    game_date = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["gameDate"]
+    prettystring = "```" + "Last Wild Game (" + game_date + ")\n"
+            
     home_team = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["teams"]["home"]["team"]["name"]
     away_team = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["teams"]["away"]["team"]["name"]
     home_team_score = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["teams"]["home"]["score"]
     away_team_score = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["teams"]["away"]["score"]
-    game_date = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["gameDate"]
-    prettystring = "```" + "Last Wild Game (" + game_date + ")\n"
     prettystring = prettystring + home_team + " (H): " + str(home_team_score) + ", " + away_team + " (A): " + str(away_team_score) + "```"
+    
+    if (home_team == "Minnesota Wild" and home_team_score > away_team_score) or (away_team == "Minnesota Wild" and away_team_score > home_team_score) :
+        prettystring = prettystring + "Wild win!\n"
+        
+    gamecenter_url = "https://www.nhl.com/gamecenter/" + str(nhl_last_game)    
+    prettystring = prettystring + "NHL Gamecenter: " + gamecenter_url
     return prettystring
 
 # Discord slash command to "Get the most recent Twins game results from Mojo"
