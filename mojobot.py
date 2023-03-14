@@ -110,7 +110,7 @@ async def uptime(interaction):
               description = "Return a \"betting board\" (aka \"squares\") for the given collection of players", 
               guild = guild)
 async def betting_board(interaction, names: str):
-    players = names.split(',')
+    players = names.replace(" ", "").split(',')
     if len(players) > 1:
         prettystring = "Generating Betting Board for " + str(players) + "\n"
         
