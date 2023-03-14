@@ -105,6 +105,49 @@ async def league_standings(interaction):
 async def uptime(interaction):
     await interaction.response.send_message(datetime.now() - start_up_datetime)
 
+# Discord slash command to "Return a "betting board" (aka "squares") for the given collection of players"
+@tree.command(name = "board", 
+              description = "Return a \"betting board\" (aka \"squares\") for the given collection of players", 
+              guild = guild)
+async def betting_board(interaction, names: str):
+    players = names.split(',')
+    if len(players) > 1:
+        prettystring = "Generating Betting Board for " + str(players) + "\n"
+        
+        used_players = []
+
+        assignments = dict()
+
+        for player in players:
+            assignments[player] = []
+
+        for home_score in range(10):
+            for away_score in range(10):
+                if(len(players) <= 0):
+                    players = used_players.copy()
+                    used_players.clear()
+                # pick a random player
+                rand = random.randint(0, len(players)-1)
+                player = list(players)[rand]
+                # add the numbers to their assignments
+                players_assignments = assignments[player]
+                players_assignments.append(str(home_score) + " " + str(away_score))
+                # remove from players and put in used_players
+                used_players.append(player)
+                players.remove(player)
+                
+        
+        
+        for player in assignments.keys():
+            prettystring = prettystring + player + "->" + str(assignments[player]) + " - $" + str(len(assignments[player]))
+            prettystring = prettystring + "\n"
+            
+        await interaction.response.send_message("```" + 
+                                               prettystring + 
+                                               "```")
+    else:
+        await interaction.response.send_message("Not enough names given!")
+    
 # ----------------------------------------------------------------------------
 # Discord on_ready, background_thread, and on_message
 # ----------------------------------------------------------------------------
@@ -162,49 +205,7 @@ async def on_message(message):
     if ('Praise Mojo' in message.content or 'praise Mojo' in message.content or
         'praise mojo' in message.content or 'Praise mojo' in message.content):
         response = "I bless you, my child."
-        await message.channel.send(response)         
-    
-    # TODO - Make into a proper slash command
-    # Return a "betting board" (aka "squares") for the given collection of players
-    if message.content.startswith('-mojobettingboard'):
-        names_substring = message.content.replace('-mojobettingboard', '')
-        players = names_substring.split(',')
-        if len(players) > 1:
-            await message.channel.send("Generating Betting Board for " + str(players))
-            
-            used_players = []
-    
-            assignments = dict()
-    
-            for player in players:
-                assignments[player] = []
-    
-            for home_score in range(10):
-                for away_score in range(10):
-                    if(len(players) <= 0):
-                        players = used_players.copy()
-                        used_players.clear()
-                    # pick a random player
-                    rand = random.randint(0, len(players)-1)
-                    player = list(players)[rand]
-                    # add the numbers to their assignments
-                    players_assignments = assignments[player]
-                    players_assignments.append(str(home_score) + " " + str(away_score))
-                    # remove from players and put in used_players
-                    used_players.append(player)
-                    players.remove(player)
-                    
-            
-            prettystring = ""
-            for player in assignments.keys():
-                prettystring = prettystring + player + "->" + str(assignments[player]) + " - $" + str(len(assignments[player]))
-                prettystring = prettystring + "\n"
-                
-            await message.channel.send("```" + 
-                                       prettystring + 
-                                       "```")
-        else:
-            await message.channel.send("Not enough names given!")
+        await message.channel.send(response)
 
 client.run(TOKEN)
     
