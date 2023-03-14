@@ -16,6 +16,7 @@ import requests
 from pathlib import Path
 from yfpy.query import YahooFantasySportsQuery
 from discord.ext import tasks
+import openai
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -24,6 +25,7 @@ GUILD_INT = os.getenv('DISCORD_GUILD_INT')
 MOJO_BASEBALL_CHANNEL_NUM = int(os.getenv('DISCORD_BASEBALL_CHANNEL'))
 MOJO_ICE_CHANNEL_NUM = int(os.getenv('DISCORD_HOCKEY_CHANNEL'))
 YAHOO_LEAGUE_ID = os.getenv('YAHOO_LEAGUE_ID')
+openai.api_key = os.getenv('OPENAI_API_KEY')
 MLB_URL = 'https://statsapi.mlb.com/api/v1/schedule/games/?sportId=1'
 TWINS_ID = 142
 WILD_ID = 30
@@ -37,6 +39,9 @@ guild = discord.Object(id=GUILD_INT)
 tree = app_commands.CommandTree(client)
 
 start_up_datetime = datetime.now()
+
+# Set up the model
+model_engine = "text-davinci-003"
 
 # Convenience function to get the ID number of the most recent Twins game
 def get_twins_last_game():
@@ -73,13 +78,13 @@ def get_twins_pretty_string(gameId):
     away_runs = boxscore_data["away"]["teamStats"]["batting"]["runs"]
     home_runs = boxscore_data["home"]["teamStats"]["batting"]["runs"]
     
-    result = ""
+    prettystring = ""
     if (away == "twins" and away_runs > home_runs) or (home == "twins" and home_runs > away_runs) :
-        result = "Twins win!"
+        prettystring = "<:twins:1084666898777636935> Twins win! <:twinsM:1084667299803447326>\n"
         
     # linescore
     linescore = statsapi.linescore(gameId)
-    prettystring = "```" + linescore + "\n" + result + "```"
+    prettystring = prettystring + "```" + linescore + "```"
     
     # Trying it without showing the scoring plays, so as to take up less screenspace
     # prettystring = prettystring + "```" + statsapi.game_scoring_plays(gameId) + "```"
@@ -103,21 +108,45 @@ def get_twins_pretty_string(gameId):
 # results string, and I'd like something like that for this.
 # Convenience function to get a nice string output of the results of the Wild game with json data
 def get_wild_pretty_string(data):
-    game_date = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["gameDate"]
-    prettystring = "```" + "Last Wild Game (" + game_date + ")\n"
             
     home_team = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["teams"]["home"]["team"]["name"]
     away_team = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["teams"]["away"]["team"]["name"]
     home_team_score = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["teams"]["home"]["score"]
     away_team_score = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["teams"]["away"]["score"]
-    prettystring = prettystring + home_team + " (H): " + str(home_team_score) + ", " + away_team + " (A): " + str(away_team_score) + "```"
+    
+    prettystring = ""
     
     if (home_team == "Minnesota Wild" and home_team_score > away_team_score) or (away_team == "Minnesota Wild" and away_team_score > home_team_score) :
-        prettystring = prettystring + "Wild win!\n"
+        prettystring = "<:wild:1084667743233646632> Wild win! <:wild:1084667743233646632>\n"
+        
+    game_date = data["teams"][0]["previousGameSchedule"]["dates"][0]["games"][0]["gameDate"]
+    prettystring = prettystring + "```" + "Last Wild Game (" + game_date + ")\n"
+    
+    prettystring = prettystring + home_team + " (H): " + str(home_team_score) + ", " + away_team + " (A): " + str(away_team_score) + "```"
+
         
     gamecenter_url = "https://www.nhl.com/gamecenter/" + str(nhl_last_game)    
     prettystring = prettystring + "NHL Gamecenter: " + gamecenter_url
     return prettystring
+
+# Discord slash command to "Talk to Mojo about anything (powered by ChatGPT)"
+@tree.command(name = "chat", description = "Talk to Mojo about anything (powered by ChatGPT)", guild = guild)
+async def mojo_chat(interaction, prompt: str):
+    # Generate a chat gpt response
+    completion = openai.Completion.create(
+        engine=model_engine,
+        prompt=prompt,
+        max_tokens=1024,
+        n=1,
+        stop=None,
+        temperature=0.5,
+    )
+
+    response = completion.choices[0].text
+    
+    prettystring = "```Responding to: \n\"" + prompt + "\"\n\n"
+    prettystring = prettystring + "Mojo says: " + response + "```"
+    await interaction.response.send_message(prettystring)
 
 # Discord slash command to "Get the most recent Twins game results from Mojo"
 @tree.command(name = "twins", description = "Get the most recent Twins game results from Mojo", 
