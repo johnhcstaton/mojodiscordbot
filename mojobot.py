@@ -79,11 +79,12 @@ async def twins_game(interaction):
         await interaction.response.send_message(convenience.get_twins_pretty_string(last_game))
   
 # Discord slash command to "Get the most recent Twins standings from Mojo"
-@tree.command(name = "twins", description = "Get the most recent Twins standings from Mojo", 
+@tree.command(name = "twins_standings", description = "Get the most recent Twins standings from Mojo", 
               guild = guild) 
 async def twins_standings(interaction):
     standings = convenience.get_twins_standings()
-    await interaction.response.send_message(standings)
+    prettystring = "```" + standings + "```"
+    await interaction.response.send_message(prettystring)
     
     
 # Discord slash command to "Get the most recent Wild game results from Mojo"
