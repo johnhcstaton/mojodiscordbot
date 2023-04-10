@@ -12,6 +12,7 @@ TWINS_ID = 142
 WILD_ID = 30
 MLB_URL = 'https://statsapi.mlb.com/api/v1/schedule/games/?sportId=1'
 NHL_URL = 'https://statsapi.web.nhl.com/api/v1/teams/' + str(WILD_ID) + '?expand=team.schedule.previous'
+NHL_STANDINGS_URL = 'https://statsapi.web.nhl.com/api/v1/standings'
 
 class convenience:
     
@@ -39,6 +40,27 @@ class convenience:
         
         return mlb_last_game
     
+    # Convenience function to get nice string output of the NHL (Wild's division specifically) standings
+    def get_wild_standings():
+        response = requests.get(NHL_STANDINGS_URL, params={"Content-Type": "application/json"})
+        data = response.json()
+        return_string = ""
+        division = data["records"][2]["division"]["name"]
+        conference = data["records"][2]["conference"]["name"]
+        return_string = return_string + division + " Division - " + conference + " Conference\n"
+        rank = 1
+        for team in data["records"][2]["teamRecords"]:
+            team_name = team["team"]["name"]
+            team_wins = str(team["leagueRecord"]["wins"])
+            team_losses = str(team["leagueRecord"]["losses"])
+            team_ot = str(team["leagueRecord"]["ot"])
+            team_pts = str(team["points"])
+            return_string = return_string + str(rank) + ") " + team_name + " ("
+            return_string = return_string + team_wins + "-" + team_losses + "-"
+            return_string = return_string + team_ot + " " + team_pts + "pts)\n"
+            rank = rank + 1
+        return return_string
+        
     # Convenience function to get the ID number of the most recent Wild game
     def get_wild_last_game():
         response = requests.get(NHL_URL, params={"Content-Type": "application/json"})
