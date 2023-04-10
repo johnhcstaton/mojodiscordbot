@@ -15,6 +15,14 @@ NHL_URL = 'https://statsapi.web.nhl.com/api/v1/teams/' + str(WILD_ID) + '?expand
 
 class convenience:
     
+    # Convenience function to get nice string output of the MLB standings
+    def get_twins_standings():
+        today = datetime.now()
+        year = today.year
+        month = '{:02d}'.format(today.month)
+        day = '{:02d}'.format(today.day)
+        return statsapi.standings(leagueId="103", division="all", include_wildcard=True, season=None, standingsTypes=None, date=month + "/" + day + "/" + str(year))
+    
     # Convenience function to get the ID number of the most recent Twins game
     def get_twins_last_game():
         # try statsapi, if it returns None, do it my way
